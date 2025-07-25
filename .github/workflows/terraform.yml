@@ -38,10 +38,14 @@ jobs:
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v2 
+        uses: hashicorp/setup-terraform@v2
 
       - name: Terraform Init
-        run: terraform init
+        run: terraform init \
+             -backend-config="bucket=${{ secrets.TF_STATE_BUCKET }}" \
+             -backend-config="key=path/to/terraform.tfstate" \
+             -backend-config="region=us-east-2" \
+             -backend-config="dynamodb_table=terraform-state-lock"
 
       - name: Terraform Plan
         id: plan

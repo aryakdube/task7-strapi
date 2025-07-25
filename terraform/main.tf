@@ -23,10 +23,7 @@ data "aws_availability_zones" "available" {
 resource "aws_ecs_cluster" "strapi_cluster" {
   name = "aryak-strapi-cluster"
 }
-# ECR Repository for Strapi Docker image
-resource "aws_ecr_repository" "strapi" {
-  name = "aryak-strapi-app"
-}
+
 
 resource "aws_ecs_task_definition" "strapi_task" {
   family                   = "aryak-strapi-task"
@@ -138,6 +135,22 @@ resource "aws_lb" "alb" {
   "subnet-03e27b60efa8df9f0"  
 ]
 }
+# Create RDS subnet group
+resource "aws_db_subnet_group" "db_subnet_group" {
+  name       = "aryak-strapi-db-subnet-group"
+  subnet_ids = [
+    "subnet-024126fd1eb33ec08", 
+    "subnet-03e27b60efa8df9f0"  
+  ]
+  tags = {
+    Name = "strapi-db-subnet-group"
+  }
+
+  lifecycle {
+    ignore_changes = [subnet_ids]
+  }
+}
+
 
 # Target group for ECS tasks
 resource "aws_lb_target_group" "tg" {
@@ -219,63 +232,3 @@ resource "aws_ecs_service" "strapi_service" {
   depends_on = [aws_lb_listener.listener]
 }
 
-# Create RDS subnet group
-resource "aws_db_subnet_group" "db_subnet_group" {
-  name       = "aryak-strapi-db-subnet-group"
-  subnet_ids = [
-    "subnet-024126fd1eb33ec08", 
-    "subnet-03e27b60efa8df9f0"  
-  ]
-  tags = {
-    Name = "strapi-db-subnet-group"
-  }
-
-  lifecycle {
-    ignore_changes = [subnet_ids]
-  }
-}
-# S3 bucket for storing Terraform state
-resource "aws_s3_bucket" "terraform_state" {
-  bucket = "terraform-state-aryak-2025"
-}
-
-# Enable versioning (now done via separate resource)
-resource "aws_s3_bucket_versioning" "versioning" {
-  bucket = aws_s3_bucket.terraform_state.id
-
-  versioning_configuration {
-    status = "Enabled"
-  }
-}
-
-# Secure the bucket by blocking all public access
-resource "aws_s3_bucket_public_access_block" "public_block" {
-  bucket = aws_s3_bucket.terraform_state.id
-
-  block_public_acls       = true
-  block_public_policy     = true
-  ignore_public_acls      = true
-  restrict_public_buckets = true
-}
-
-# DynamoDB table for state locking
-resource "aws_dynamodb_table" "terraform_locks" {
-  name         = "terraform-state-lock"
-  billing_mode = "PAY_PER_REQUEST"
-  hash_key     = "LockID"
-
-  attribute {
-    name = "LockID"
-    type = "S"
-  }
-}
-
-terraform {
-  backend "s3" {
-    bucket         = "terraform-state-aryak-2025"
-    key            = "ecs/strapi/terraform.tfstate"
-    region         = "us-east-2"
-    dynamodb_table = "terraform-state-lock"
-    encrypt        = true
-  }
-}

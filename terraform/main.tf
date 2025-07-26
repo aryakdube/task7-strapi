@@ -19,7 +19,9 @@ data "aws_availability_zones" "available" {
   state = "available"
 }
 
-
+resource "aws_ecs_cluster" "strapi_cluster" {
+  name = "aryak-strapi-cluster2"
+}
 
 resource "aws_ecs_task_definition" "strapi_task" {
   family                   = "aryak-strapi-task"

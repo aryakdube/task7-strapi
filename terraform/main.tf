@@ -83,7 +83,6 @@ resource "aws_ecs_task_definition" "strapi_task" {
   ])
 }
 
-# Security group for ALB and ECS tasks
 resource "aws_security_group" "ecs_sg" {
   name        = "aryak-strapi-ecs-sg2"
   description = "Allow HTTP from anywhere and Postgres traffic within SG"

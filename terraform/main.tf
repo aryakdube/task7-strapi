@@ -19,10 +19,6 @@ data "aws_availability_zones" "available" {
   state = "available"
 }
 
-# ECS Cluster
-resource "aws_ecs_cluster" "strapi_cluster" {
-  name = "aryak-strapi-cluster"
-}
 
 
 resource "aws_ecs_task_definition" "strapi_task" {
@@ -87,7 +83,7 @@ resource "aws_ecs_task_definition" "strapi_task" {
 
 # Security group for ALB and ECS tasks
 resource "aws_security_group" "ecs_sg" {
-  name        = "aryak-strapi-ecs-sg"
+  name        = "aryak-strapi-ecs-sg2"
   description = "Allow HTTP from anywhere and Postgres traffic within SG"
   vpc_id      = data.aws_vpc.default.id
 

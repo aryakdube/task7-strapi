@@ -1,34 +1,30 @@
 name: Terraform Deploy
 
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - '**/*.tf'
-      - '.github/workflows/terraform.yml'
-  pull_request:
-    branches:
-      - main
-    paths:
-      - '**/*.tf'
-      - '.github/workflows/terraform.yml'
-
+  workflow_run:
+    workflows: ["Deploy Strapi to ECS Fargate (Always Latest)"]
+    types:
+      - completed
 env:
   AWS_REGION: us-east-2
 
 jobs:
   terraform:
-    name: 'Terraform Format, Plan, and Apply'
     runs-on: ubuntu-latest
     defaults:
       run:
         shell: bash
         working-directory: ./terraform
-
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
+
+      - name: Download previous Terraform state if available
+        uses: actions/download-artifact@v4
+        with:
+          name: terraform-state
+          path: ./terraform
+        continue-on-error: true
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -39,7 +35,7 @@ jobs:
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
-        
+
       - name: Terraform Init
         run: terraform init
 
@@ -48,7 +44,7 @@ jobs:
         run: terraform plan -no-color -input=false
 
       - name: Terraform Apply
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        if:  github.event_name == 'workflow_dispatch'
         run: terraform apply -auto-approve -input=false
 
       - name: Upload terraform.tfstate as artifact
